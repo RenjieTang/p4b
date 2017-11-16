@@ -3,6 +3,13 @@
 
 struct stat;
 
+typedef struct {
+	uint flag;
+} lock_t;
+
+typedef struct {
+	lock_t lock;
+} cond_t;
 // system calls
 int fork(void);
 int exit(void) __attribute__((noreturn));

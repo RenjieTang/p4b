@@ -103,3 +103,37 @@ memmove(void *vdst, void *vsrc, int n)
     *dst++ = *src++;
   return vdst;
 }
+
+int 
+create_thread(void (*start_routine)(void*), void *arg)
+{
+  void* stack = malloc(PGSIZE);
+  return clone(start_routine,arg,stack);
+}
+
+int 
+thread_join() {
+  void *stack;
+  int ret = join(&stack);
+  free(stack);
+  return ret;
+}
+
+int
+lock_init(lock_t *lock)
+{
+  lock->flag = 0;
+}
+
+int
+lock_acquire(lock_t* lock) 
+{
+  while(xchg(&lock->flag,1) != 0)
+    ;
+}
+
+int 
+lock_release(lock_t* lock)
+{
+  xchg(lock->flag,0);
+}
