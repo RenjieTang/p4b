@@ -108,22 +108,19 @@ int
 thread_create(void (*fcn)(void*), void *arg)
 {
   void *stack;
-  stack = malloc(2*4096);
-  if((uint)stack % 4096)
-    stack = stack + (4096 - (uint)stack % 4096);
-  return clone(fcn,arg,stack);
+  stack = malloc(4096);
+  int ret = clone(fcn,arg,stack);
+  return ret;
 }
 
 int 
 thread_join() {
   void *stack;
-  // printf(1,"before!!!!!!\n");
 
   int ret = join(&stack);
   if(ret == -1) 
     return ret;
   free(stack);
-  // printf(1,"after!!!!!!!!!!\n");
   return ret;
 }
 

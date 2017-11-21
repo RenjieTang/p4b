@@ -75,6 +75,11 @@ trap(struct trapframe *tf)
             cpu->id, tf->cs, tf->eip);
     lapiceoi();
     break;
+  case T_PGFLT:
+    if(rcr2() == 0xffffffff) {
+      proc->killed = 1;
+      break;
+    }
    
   default:
     if(proc == 0 || (tf->cs&3) == 0){

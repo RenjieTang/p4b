@@ -175,7 +175,6 @@ clone(void(*fcn)(void*), void *arg, void *stack)
     return -1;
   }
 
- // cprintf("pid is %d!!!!!!!\n", np->pid);
 
   np->pgdir = proc->pgdir;
   np->sz = proc->sz;
@@ -183,16 +182,14 @@ clone(void(*fcn)(void*), void *arg, void *stack)
   *np->tf = *proc->tf;
   np->stack = stack;
 
-  void* retaddr = stack + PGSIZE - 2*sizeof(void*);
+  void* retaddr = stack + PGSIZE - 2*4;
   *(uint *) retaddr = 0xffffffff;
-  void* stackarg = stack + PGSIZE - sizeof(void*);
+  void* stackarg = stack + PGSIZE - 4;
   *(uint *) stackarg = (uint) arg;
-
+  
 
   np->tf->esp = (uint)stack;
-  //memmove((void *)np->tf->esp, stack, PGSIZE);
   np->tf->esp += PGSIZE - 2 * sizeof(void *);
-  np->tf->ebp = np->tf->esp;
   np->tf->eip = (int)fcn;
 
   np->tf->eax = 0;
@@ -205,7 +202,6 @@ clone(void(*fcn)(void*), void *arg, void *stack)
   pid = np->pid;
   np->state = RUNNABLE;
   safestrcpy(np->name, proc->name, sizeof(proc->name));
-    // cprintf("pid is %d!!!!!!!\n", np->pid);
   return pid;
 }
 
