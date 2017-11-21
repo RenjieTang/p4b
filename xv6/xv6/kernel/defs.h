@@ -10,6 +10,14 @@ struct proc;
 struct spinlock;
 struct stat;
 
+typedef struct {
+	uint flag;
+} lock_t;
+	
+typedef struct {
+	lock_t *lock;
+} cond_t;
+	
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
@@ -111,6 +119,8 @@ void            wakeup(void*);
 void            yield(void);
 int 			clone(void(*fcn)(void*), void* arg, void* stack);
 int 			join(void** stack);
+void 			sleep2(void*, lock_t*);
+void 			wakeup2(void*);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

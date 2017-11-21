@@ -107,7 +107,7 @@ int
 growproc(int n)
 {
   uint sz;
-  
+  struct proc *p;
   sz = proc->sz;
   if(n > 0){
     if((sz = allocuvm(proc->pgdir, sz, sz + n)) == 0)
@@ -117,6 +117,11 @@ growproc(int n)
       return -1;
   }
   proc->sz = sz;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if((p->pgdir == proc->pgdir) && (p->parent == proc)) {
+        p->sz = proc->sz;
+      }
+  }
   switchuvm(proc);
   return 0;
 }
@@ -166,8 +171,11 @@ clone(void(*fcn)(void*), void *arg, void *stack)
   struct proc *np;
 
   // Allocate process.
-  if((np = allocproc()) == 0)
+  if((np = allocproc()) == 0) {
     return -1;
+  }
+
+ // cprintf("pid is %d!!!!!!!\n", np->pid);
 
   np->pgdir = proc->pgdir;
   np->sz = proc->sz;
@@ -182,7 +190,7 @@ clone(void(*fcn)(void*), void *arg, void *stack)
 
 
   np->tf->esp = (uint)stack;
-  memmove((void *)np->tf->esp, stack, PGSIZE);
+  //memmove((void *)np->tf->esp, stack, PGSIZE);
   np->tf->esp += PGSIZE - 2 * sizeof(void *);
   np->tf->ebp = np->tf->esp;
   np->tf->eip = (int)fcn;
@@ -197,6 +205,7 @@ clone(void(*fcn)(void*), void *arg, void *stack)
   pid = np->pid;
   np->state = RUNNABLE;
   safestrcpy(np->name, proc->name, sizeof(proc->name));
+    // cprintf("pid is %d!!!!!!!\n", np->pid);
   return pid;
 }
 
@@ -237,6 +246,7 @@ join(void** stack)
     // Wait for children to exit.  (See wakeup1 call in proc_exit.)
     sleep(proc, &ptable.lock);  //DOC: wait-sleep
   }
+  return 0;
 }
 
 // Exit the current process.  Does not return.
@@ -295,7 +305,7 @@ wait(void)
     // Scan through table looking for zombie children.
     havekids = 0;
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->parent != proc)
+      if(p->parent != proc || p->pgdir == proc->pgdir)
         continue;
       havekids = 1;
       if(p->state == ZOMBIE){
@@ -443,6 +453,23 @@ sleep(void *chan, struct spinlock *lk)
   }
 }
 
+void
+sleep2(void* chan, lock_t *lock) 
+{
+  if(proc == 0)
+    panic("sleep");
+  acquire(&ptable.lock);
+
+  proc->chan = chan;
+  proc->state = SLEEPING;
+  lock->flag = 0;
+  sched();
+
+  proc->chan = 0;
+  release(&ptable.lock);
+  while(xchg(&lock->flag,1) != 0);    
+}
+
 // Wake up all processes sleeping on chan.
 // The ptable lock must be held.
 static void
@@ -453,6 +480,18 @@ wakeup1(void *chan)
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     if(p->state == SLEEPING && p->chan == chan)
       p->state = RUNNABLE;
+}
+
+void
+wakeup2(void* chan) 
+{
+  struct proc* p;
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+    if(p->state == SLEEPING && p->chan == chan) {
+      p->state = RUNNABLE;
+      break;
+    }
+  }
 }
 
 // Wake up all processes sleeping on chan.

@@ -40,9 +40,10 @@ kfree(char *v)
 {
   struct run *r;
 
-  if((uint)v % PGSIZE || v < end || (uint)v >= PHYSTOP) 
+  if((uint)v % PGSIZE || v < end || (uint)v >= PHYSTOP) {
+   // cprintf("This is v %c!!!!!!!\n",*v );
     panic("kfree");
-
+}
   // Fill with junk to catch dangling refs.
   memset(v, 1, PGSIZE);
 

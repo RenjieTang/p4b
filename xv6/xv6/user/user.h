@@ -8,7 +8,7 @@ typedef struct {
 } lock_t;
 
 typedef struct {
-	lock_t lock;
+	lock_t* lock;
 } cond_t;
 // system calls
 int fork(void);
@@ -32,6 +32,10 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int clone(void (*fcn)(void*), void *, void *);
+int join(void**);
+int waitcv(cond_t *, lock_t *);
+int wakecv(cond_t *);
 
 // user library functions (ulib.c)
 int stat(char*, struct stat*);
@@ -46,6 +50,15 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
 int atoi(const char*);
+int thread_create(void (*start_routine)(void*), void *);
+int thread_join();
+void lock_init(lock_t *);
+void lock_acquire(lock_t *); 
+void lock_release(lock_t *);
+void cond_init(cond_t *);
+void cond_wait(cond_t *, lock_t *);
+void cond_signal(cond_t *);
+
 
 #endif // _USER_H_
 

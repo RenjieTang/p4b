@@ -76,6 +76,61 @@ sys_sleep(void)
   return 0;
 }
 
+
+int sys_clone(void) {
+  void *fcn, *arg, *stack;
+
+  if(argptr(0, (void *)&fcn, sizeof(void *)) < 0)
+    return -1;
+
+  if(argptr(1, (void *)&arg, sizeof(void *)) < 0)
+    return -1;
+
+  if(argptr(2, (void *)&stack, sizeof(void *)) < 0)
+    return -1;
+
+  if ((uint)stack % PGSIZE != 0)
+    return -1;
+
+  if ((uint)proc->sz - (uint)stack == PGSIZE/2)
+    return -1;
+
+  return clone(fcn, arg, stack);
+}
+
+int sys_join(void) {
+  void **stack;
+
+  if(argptr(0, (void *)&stack, sizeof(void *)) < 0)
+    return -1;
+
+  int ret = join(stack);
+  return ret;
+}
+
+
+int
+sys_waitcv(void) 
+{
+  void *cv, *lock;
+  if(argptr(0, (void*)&cv, sizeof(void*)) < 0)
+    return -1;
+  if(argptr(1, (void*)&lock, sizeof(void*)) < 0)
+    return -1;
+  sleep2(cv,(lock_t*)lock);
+  return 0;
+}
+
+int
+sys_wakecv(void)
+{
+  void *cv;
+  if(argptr(0, (void*)&cv, sizeof(void*)) < 0)
+    return -1;
+  wakeup2(cv);
+  return 0;
+}
+
 // return how many clock tick interrupts have occurred
 // since boot.
 int
